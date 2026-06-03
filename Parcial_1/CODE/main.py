@@ -1,8 +1,11 @@
 import asyncio
 import os
 import shutil
+import smtplib
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 import docx
 import PyPDF2
@@ -33,6 +36,47 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+# ── Configuración SMTP (variables de entorno; sin ellas el envío queda pendiente) ──
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASS = os.getenv("SMTP_PASS", "")
+
+
+async def enviar_correo_verificacion(destinatario: str, nombre: str) -> None:
+    """Esqueleto de envío de correo de confirmación de cuenta.
+
+    Requiere SMTP_USER y SMTP_PASS definidos en .env para funcionar.
+    Mientras no estén configurados, registra el intento y retorna sin error.
+    """
+    if not SMTP_USER or not SMTP_PASS:
+        print(f"[EMAIL] SMTP no configurado — correo de verificación pendiente para {destinatario}")
+        return
+
+    mensaje = MIMEMultipart("alternative")
+    mensaje["Subject"] = "Confirma tu cuenta — United Republic"
+    mensaje["From"] = SMTP_USER
+    mensaje["To"] = destinatario
+
+    cuerpo_html = f"""
+    <html><body>
+      <h2>Hola {nombre},</h2>
+      <p>Tu cuenta en <strong>United Republic</strong> ha sido creada.</p>
+      <p>Por favor confirma tu correo haciendo clic en el enlace que recibirás próximamente.</p>
+    </body></html>
+    """
+    mensaje.attach(MIMEText(cuerpo_html, "html"))
+
+    try:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as servidor:
+            servidor.starttls()
+            servidor.login(SMTP_USER, SMTP_PASS)
+            servidor.sendmail(SMTP_USER, destinatario, mensaje.as_string())
+        print(f"[EMAIL] Correo de verificación enviado a {destinatario}")
+    except Exception as exc:
+        print(f"[EMAIL] Error al enviar correo a {destinatario}: {exc}")
+
 
 # Gestor de ciclo de vida del servidor
 @asynccontextmanager
@@ -129,7 +173,9 @@ async def root():
 async def crear_usuario(request: Request, usuario: UsuarioCreate, usuario_actual: dict = Depends(requerir_rol(["superadmin"]))):
     nuevo_usuario = usuario.model_dump()
     nuevo_usuario["hashed_password"] = pwd_context.hash(nuevo_usuario.pop("password"))
+    nuevo_usuario["is_verified"] = False
     await request.app.state.db["usuarios"].insert_one(nuevo_usuario)
+    await enviar_correo_verificacion(nuevo_usuario["correo"], nuevo_usuario["nombre"])
     return {"mensaje": "Usuario creado exitosamente"}
 
 

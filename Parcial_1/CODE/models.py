@@ -8,6 +8,17 @@ Rol = Literal["superadmin", "admin", "traductor"]
 
 _EMAIL_RE = re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$')
 
+DOMINIOS_PERMITIDOS = {"espe.edu.ec", "gmail.com"}
+
+
+def _validar_correo(v: str) -> str:
+    if not _EMAIL_RE.match(v):
+        raise ValueError('Formato de correo electrónico inválido')
+    dominio = v.split('@')[-1].lower()
+    if dominio not in DOMINIOS_PERMITIDOS:
+        raise ValueError('Solo se permiten correos institucionales (@espe.edu.ec) o Gmail (@gmail.com)')
+    return v
+
 
 class Usuario(BaseModel):
     nombre: str
@@ -24,9 +35,7 @@ class UsuarioCreate(BaseModel):
     @field_validator('correo')
     @classmethod
     def correo_valido(cls, v: str) -> str:
-        if not _EMAIL_RE.match(v):
-            raise ValueError('Formato de correo electrónico inválido')
-        return v
+        return _validar_correo(v)
 
 
 class DocumentoCreate(BaseModel):
@@ -47,8 +56,8 @@ class UsuarioUpdate(BaseModel):
     @field_validator('correo')
     @classmethod
     def correo_valido(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and not _EMAIL_RE.match(v):
-            raise ValueError('Formato de correo electrónico inválido')
+        if v is not None:
+            return _validar_correo(v)
         return v
 
 

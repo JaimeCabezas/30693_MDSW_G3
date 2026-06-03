@@ -26,28 +26,31 @@ async def main():
     usuarios = [
         {
             "nombre": "Jaime",
-            "correo": "jaime@unitedrepublic.com",
+            "correo": "jacabezas13@espe.edu.ec",
             "hashed_password": password_hash,
             "rol": "admin",
+            "is_verified": True,
         },
         {
             "nombre": "Bryan",
-            "correo": "bryan@unitedrepublic.com",
+            "correo": "bacevallos1@espe.edu.ec",
             "hashed_password": password_hash,
             "rol": "admin",
+            "is_verified": True,
         },
         {
             "nombre": "Jelen",
-            "correo": "jelen@unitedrepublic.com",
+            "correo": "jdlucio@espe.edu.ec",
             "hashed_password": password_hash,
             "rol": "traductor",
+            "is_verified": True,
         },
     ]
 
     await db["usuarios"].insert_many(usuarios)
     print(f"{len(usuarios)} usuario(s) semilla insertados:")
     for u in usuarios:
-        print(f"  - {u['nombre']} <{u['correo']}> — rol: {u['rol']}")
+        print(f"  - {u['nombre']} <{u['correo']}> — rol: {u['rol']} | verificado: {u['is_verified']}")
 
     client.close()
 
