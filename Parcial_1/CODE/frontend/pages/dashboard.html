@@ -146,6 +146,15 @@
 
     /* ── Responsivo ───────────────────────────────────────────────────────── */
     @media (max-width: 768px) {
+      /* Panel de alertas: centrado horizontal para evitar desbordamiento lateral */
+      #menu-alertas {
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        width: 300px;
+        max-width: 90vw;
+      }
+
       /* Barra de navegación: apila en columna para evitar solapamiento */
       nav {
         flex-direction: column !important;
