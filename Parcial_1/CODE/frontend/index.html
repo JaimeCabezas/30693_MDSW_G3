@@ -5,45 +5,203 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>United Republic</title>
   <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white min-h-screen flex items-center justify-center">
+  <style>
+    /* ── Layout Split Screen ──────────────────────────────────────────────── */
+    .split-layout {
+      display: flex;
+      min-height: 100vh;
+    }
 
-  <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.5)] w-full max-w-md p-10">
-    <div class="mb-8 text-center">
-      <h1 class="text-3xl font-bold text-white tracking-wide">United Republic</h1>
-      <p class="text-gray-300 mt-2 text-sm">Inicia sesión para continuar</p>
+    /* El panel de marca SIEMPRE permanece oscuro/corporativo */
+    .branding-panel {
+      flex: 1;
+      background-color: #0f172a;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .branding-panel h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+
+    .branding-panel p {
+      font-size: 1rem;
+      opacity: 0.7;
+      max-width: 26ch;
+      line-height: 1.7;
+    }
+
+    .main-logo {
+      max-width: 180px;
+      width: 100%;
+      margin-bottom: 1.5rem;
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+    }
+
+    /* Panel del formulario — base oscuro */
+    .form-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      background: radial-gradient(circle at top right, #1e293b 0%, #0f172a 100%);
+      color: white;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .form-card {
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    /* ── Modo Claro — afecta SOLO al panel del formulario ─────────────────── */
+    body.light-mode .form-panel {
+      background: linear-gradient(135deg, #f5f7fa 0%, #d5e0ee 100%);
+      color: #333333;
+    }
+
+    body.light-mode .form-panel .form-card {
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    body.light-mode .form-panel [class*="bg-white/"] {
+      background-color: #f8f9fa !important;
+    }
+
+    body.light-mode .form-panel [class*="border-white/"] {
+      border-color: #dee2e6 !important;
+    }
+
+    body.light-mode .form-panel [class*="text-white"] {
+      color: #333333 !important;
+    }
+
+    body.light-mode .form-panel [class*="text-gray-2"],
+    body.light-mode .form-panel [class*="text-gray-3"],
+    body.light-mode .form-panel [class*="text-gray-4"] {
+      color: #555555 !important;
+    }
+
+    body.light-mode .form-panel input[type="email"],
+    body.light-mode .form-panel input[type="password"] {
+      background-color: #ffffff !important;
+      border-color: #ced4da !important;
+      color: #333333 !important;
+    }
+
+    body.light-mode .form-panel input::placeholder {
+      color: #adb5bd !important;
+    }
+
+    body.light-mode #theme-toggle {
+      background-color: rgba(0, 0, 0, 0.08) !important;
+      color: #333333 !important;
+      border-color: rgba(0, 0, 0, 0.2) !important;
+    }
+
+    /* ── Responsivo ───────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .split-layout {
+        flex-direction: column;
+      }
+
+      .branding-panel {
+        flex: none;
+        padding: 2.5rem 1.5rem 2rem;
+      }
+
+      .branding-panel h1 {
+        font-size: 2rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .branding-panel {
+        padding: 1.5rem 1rem;
+      }
+
+      .branding-panel h1 {
+        font-size: 1.6rem;
+      }
+
+      .branding-panel p {
+        font-size: 0.875rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="split-layout">
+
+    <!-- ── Panel de Marca (siempre oscuro/corporativo) ─────────────────── -->
+    <div class="branding-panel">
+      <img src="assets/logo-ur.png" alt="Logo United Republic" class="main-logo" />
+      <h1>United Republic</h1>
+      <p>Plataforma de Automatización de Documentos S.A.S.</p>
     </div>
 
-    <form id="form-login" class="space-y-5">
-      <div>
-        <label for="input-correo" class="block text-sm font-medium text-gray-200 mb-1">Correo electrónico</label>
-        <input
-          id="input-correo"
-          type="email"
-          placeholder="correo@ejemplo.com"
-          required
-          class="bg-slate-800/50 border border-slate-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg px-4 py-2.5 w-full transition-all"
-        />
-      </div>
-
-      <div>
-        <label for="input-password" class="block text-sm font-medium text-gray-200 mb-1">Contraseña</label>
-        <input
-          id="input-password"
-          type="password"
-          placeholder="••••••••"
-          required
-          class="bg-slate-800/50 border border-slate-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg px-4 py-2.5 w-full transition-all"
-        />
-      </div>
+    <!-- ── Panel del Formulario ────────────────────────────────────────── -->
+    <div class="form-panel">
 
       <button
-        type="submit"
-        class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_5px_15px_rgba(0,0,0,0.3)]"
+        id="theme-toggle"
+        class="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg transition-all duration-300 border border-white/20"
       >
-        Ingresar
+        ☀️ Modo Claro
       </button>
-    </form>
+
+      <div class="form-card bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl w-full max-w-md p-10 mx-4">
+        <div class="mb-8 text-center">
+          <h2 class="text-2xl font-bold text-white tracking-wide">Bienvenido</h2>
+          <p class="text-gray-300 mt-2 text-sm">Inicia sesión para continuar</p>
+        </div>
+
+        <form id="form-login" class="space-y-5">
+          <div>
+            <label for="input-correo" class="block text-sm font-medium text-gray-200 mb-1">Correo electrónico</label>
+            <input
+              id="input-correo"
+              type="email"
+              placeholder="correo@ejemplo.com"
+              required
+              class="bg-slate-800/50 border border-slate-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg px-4 py-2.5 w-full transition-all"
+            />
+          </div>
+
+          <div>
+            <label for="input-password" class="block text-sm font-medium text-gray-200 mb-1">Contraseña</label>
+            <input
+              id="input-password"
+              type="password"
+              placeholder="••••••••"
+              required
+              class="bg-slate-800/50 border border-slate-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg px-4 py-2.5 w-full transition-all"
+            />
+          </div>
+
+          <button
+            type="submit"
+            class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_5px_15px_rgba(0,0,0,0.3)]"
+          >
+            Ingresar
+          </button>
+        </form>
+      </div>
+
+    </div>
   </div>
 
   <script src="js/login.js"></script>

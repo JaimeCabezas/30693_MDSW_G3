@@ -1,3 +1,27 @@
+// ── Modo Claro / Oscuro ────────────────────────────────────────────────────────
+
+const themeToggleBtn = document.getElementById('theme-toggle');
+
+const applyTheme = (isLight) => {
+  if (isLight) {
+    document.body.classList.add('light-mode');
+    themeToggleBtn.textContent = '🌙 Modo Oscuro';
+  } else {
+    document.body.classList.remove('light-mode');
+    themeToggleBtn.textContent = '☀️ Modo Claro';
+  }
+};
+
+applyTheme(localStorage.getItem('theme') === 'light');
+
+themeToggleBtn.addEventListener('click', () => {
+  const isLight = !document.body.classList.contains('light-mode');
+  applyTheme(isLight);
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+});
+
+// ── Inicio de sesión ───────────────────────────────────────────────────────────
+
 document.getElementById('form-login').addEventListener('submit', async (e) => {
   e.preventDefault();
 

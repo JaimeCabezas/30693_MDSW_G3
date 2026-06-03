@@ -3,6 +3,28 @@ if (!token) {
   window.location.href = '../index.html';
 }
 
+// ── Modo Claro / Oscuro ────────────────────────────────────────────────────────
+
+const themeToggleBtn = document.getElementById('theme-toggle');
+
+const applyTheme = (isLight) => {
+  if (isLight) {
+    document.body.classList.add('light-mode');
+    themeToggleBtn.textContent = '🌙 Modo Oscuro';
+  } else {
+    document.body.classList.remove('light-mode');
+    themeToggleBtn.textContent = '☀️ Modo Claro';
+  }
+};
+
+applyTheme(localStorage.getItem('theme') === 'light');
+
+themeToggleBtn.addEventListener('click', () => {
+  const isLight = !document.body.classList.contains('light-mode');
+  applyTheme(isLight);
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+});
+
 let miGrafico = null;
 let documentosActuales = [];
 let mensajesChatActual = [];

@@ -6,6 +6,144 @@
   <title>Dashboard - United Republic</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* ── Base Modo Oscuro ──────────────────────────────────────────────────── */
+    body {
+      background: radial-gradient(circle at top right, #1e293b 0%, #0f172a 100%) !important;
+      min-height: 100vh;
+    }
+
+    nav {
+      background-color: #0f172a !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    /* Tarjetas de contenido — excluye el nav usando la clase rounded como proxy */
+    [class*="rounded-xl"][class*="bg-white/"],
+    [class*="rounded-2xl"][class*="bg-white/"] {
+      background-color: #1e293b !important;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    /* ── Modo Claro ────────────────────────────────────────────────────────── */
+    body.light-mode {
+      background: linear-gradient(135deg, #f5f7fa 0%, #d5e0ee 100%) !important;
+      color: #333333 !important;
+    }
+
+    body.light-mode nav {
+      background-color: #ffffff !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    body.light-mode [class*="rounded-xl"][class*="bg-white/"],
+    body.light-mode [class*="rounded-2xl"][class*="bg-white/"] {
+      background-color: #ffffff !important;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+      border: none !important;
+    }
+
+    body.light-mode [class*="border-white/"] {
+      border-color: #dee2e6 !important;
+    }
+
+    body.light-mode [class*="text-white"] {
+      color: #333333 !important;
+    }
+
+    body.light-mode [class*="text-gray-2"],
+    body.light-mode [class*="text-gray-3"],
+    body.light-mode [class*="text-gray-4"] {
+      color: #555555 !important;
+    }
+
+    body.light-mode [class*="divide-white/"] > * {
+      border-color: #dee2e6 !important;
+    }
+
+    body.light-mode tr:hover {
+      background-color: rgba(0, 0, 0, 0.04) !important;
+    }
+
+    body.light-mode #theme-toggle {
+      background-color: rgba(0, 0, 0, 0.08) !important;
+      color: #333333 !important;
+      border-color: rgba(0, 0, 0, 0.2) !important;
+    }
+
+    /* ── Panel de alertas (usa bg-slate-*, no capturado por el selector general) */
+    body.light-mode #menu-alertas {
+      background-color: #ffffff !important;
+      border-color: #e2e8f0 !important;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+      color: #475569;
+    }
+
+    body.light-mode #menu-alertas [class*="text-gray-"] {
+      color: #475569 !important;
+    }
+
+    body.light-mode #menu-alertas [class*="border-white/"] {
+      border-color: #e2e8f0 !important;
+    }
+
+    body.light-mode #menu-alertas [class*="divide-white/"] > * {
+      border-color: #e2e8f0 !important;
+    }
+
+    /* ── Modales: Modo Oscuro — mejora de legibilidad ──────────────────────── */
+    #modal-crear label, #modal-crear h3,
+    #modal-usuario label, #modal-usuario h3,
+    #modal-evaluacion label, #modal-evaluacion h3 {
+      color: #e2e8f0 !important;
+    }
+
+    /* ── Modales: Modo Claro ────────────────────────────────────────────────── */
+    body.light-mode #modal-crear > div,
+    body.light-mode #modal-usuario > div,
+    body.light-mode #modal-evaluacion > div {
+      background-color: #ffffff !important;
+      border-color: #e2e8f0 !important;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    body.light-mode #modal-crear label, body.light-mode #modal-crear h3,
+    body.light-mode #modal-usuario label, body.light-mode #modal-usuario h3,
+    body.light-mode #modal-evaluacion label, body.light-mode #modal-evaluacion h3,
+    body.light-mode #modal-evaluacion p {
+      color: #333333 !important;
+    }
+
+    body.light-mode #modal-crear input,
+    body.light-mode #modal-crear select,
+    body.light-mode #modal-crear textarea,
+    body.light-mode #modal-usuario input,
+    body.light-mode #modal-usuario select,
+    body.light-mode #modal-evaluacion textarea {
+      background-color: #f8fafc !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #333333 !important;
+    }
+
+    body.light-mode #modal-crear input::placeholder,
+    body.light-mode #modal-crear textarea::placeholder,
+    body.light-mode #modal-usuario input::placeholder,
+    body.light-mode #modal-evaluacion textarea::placeholder {
+      color: #94a3b8 !important;
+    }
+
+    body.light-mode #dropzone-nuevo {
+      background-color: #f1f5f9 !important;
+      border-color: #94a3b8 !important;
+    }
+
+    body.light-mode #dropzone-nuevo p {
+      color: #64748b !important;
+    }
+  </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white min-h-screen">
 
@@ -60,6 +198,13 @@
           <ul id="lista-alertas" class="max-h-72 overflow-y-auto divide-y divide-white/10"></ul>
         </div>
       </div>
+
+      <button
+        id="theme-toggle"
+        class="bg-white/10 hover:bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg transition-all duration-300 border border-white/20"
+      >
+        ☀️ Modo Claro
+      </button>
 
       <button
         id="btn-cerrar-sesion"
