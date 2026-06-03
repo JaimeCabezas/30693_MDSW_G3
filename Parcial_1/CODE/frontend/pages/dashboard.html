@@ -143,6 +143,58 @@
     body.light-mode #dropzone-nuevo p {
       color: #64748b !important;
     }
+
+    /* ── Responsivo ───────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      /* Barra de navegación: apila en columna para evitar solapamiento */
+      nav {
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        padding: 0.75rem 1rem !important;
+        gap: 15px;
+      }
+
+      /* Logo: centra el botón-logo en pantallas pequeñas */
+      nav > #btn-nav-docs {
+        justify-content: center;
+      }
+
+      /* Contenedor de enlaces y botones de acción: permite salto de línea */
+      nav > div {
+        display: flex !important;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+
+      /* Tabla de usuarios: habilita scroll horizontal */
+      #vista-usuarios .overflow-x-auto {
+        overflow-x: auto;
+      }
+
+      /* Tabla de auditoría: habilita scroll horizontal sin romper el card */
+      #vista-auditoria .rounded-2xl {
+        overflow-x: auto;
+      }
+
+      /* Modales: 90% de ancho con margen para no salirse de la pantalla */
+      #modal-crear > div,
+      #modal-usuario > div,
+      #modal-evaluacion > div,
+      #modal-chat > div {
+        width: 90%;
+        margin: 1rem auto;
+        max-height: 85vh;
+      }
+
+      /* Padding lateral en los overlays de modales que no lo tenían */
+      #modal-usuario,
+      #modal-evaluacion,
+      #modal-chat {
+        padding: 1rem;
+      }
+    }
   </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white min-h-screen">
@@ -295,7 +347,7 @@
         </button>
       </div>
 
-      <div class="overflow-hidden rounded-xl">
+      <div class="overflow-x-auto rounded-xl">
         <table class="w-full text-sm text-left">
           <thead class="bg-white/5 text-gray-200 uppercase text-xs tracking-wider">
             <tr>
