@@ -1,9 +1,12 @@
+import re
 from datetime import datetime
 from typing import Literal, Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 
 Rol = Literal["superadmin", "admin", "traductor"]
+
+_EMAIL_RE = re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$')
 
 
 class Usuario(BaseModel):
@@ -17,6 +20,13 @@ class UsuarioCreate(BaseModel):
     correo: EmailStr
     rol: Rol
     password: str
+
+    @field_validator('correo')
+    @classmethod
+    def correo_valido(cls, v: str) -> str:
+        if not _EMAIL_RE.match(v):
+            raise ValueError('Formato de correo electrónico inválido')
+        return v
 
 
 class DocumentoCreate(BaseModel):
@@ -33,6 +43,13 @@ class UsuarioUpdate(BaseModel):
     correo: Optional[EmailStr] = None
     rol: Optional[Rol] = None
     password: Optional[str] = None
+
+    @field_validator('correo')
+    @classmethod
+    def correo_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and not _EMAIL_RE.match(v):
+            raise ValueError('Formato de correo electrónico inválido')
+        return v
 
 
 class DocumentoUpdate(BaseModel):

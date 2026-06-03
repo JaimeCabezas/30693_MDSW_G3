@@ -12,7 +12,9 @@ from deep_translator import GoogleTranslator
 from bson import ObjectId
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -45,6 +47,14 @@ async def lifespan(app: FastAPI):
 
 # Creación de la aplicación FastAPI
 app = FastAPI(title="United Republic API", lifespan=lifespan)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request: Request, exc: RequestValidationError):
+    primer_error = exc.errors()[0]
+    mensaje = primer_error.get("msg", "Error de validación")
+    return JSONResponse(status_code=400, content={"detail": mensaje})
+
 
 app.add_middleware(
     CORSMiddleware,
