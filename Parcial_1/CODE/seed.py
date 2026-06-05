@@ -25,17 +25,24 @@ async def main():
 
     usuarios = [
         {
+            "nombre": "Alexis",
+            "correo": "ur.presidencia@gmail.com",
+            "hashed_password": password_hash,
+            "rol": "admin",
+            "is_verified": True,
+        },
+        {
             "nombre": "Jaime",
             "correo": "jacabezas13@espe.edu.ec",
             "hashed_password": password_hash,
-            "rol": "admin",
+            "rol": "traductor",
             "is_verified": True,
         },
         {
             "nombre": "Bryan",
             "correo": "bacevallos1@espe.edu.ec",
             "hashed_password": password_hash,
-            "rol": "admin",
+            "rol": "traductor",
             "is_verified": True,
         },
         {
