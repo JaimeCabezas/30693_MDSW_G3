@@ -81,6 +81,11 @@ const applyTheme = (isLight) => {
     document.body.classList.remove('light-mode');
     themeToggleBtn.textContent = '☀️ Modo Claro';
   }
+
+  if (miGrafico) {
+    miGrafico.options.plugins.legend.labels.color = isLight ? '#1a1a1a' : '#ffffff';
+    miGrafico.update();
+  }
 };
 
 applyTheme(localStorage.getItem('theme') === 'light');
@@ -693,7 +698,7 @@ async function cargarEstadisticas() {
         plugins: {
           legend: {
             position: 'bottom',
-            labels: { color: '#fff', padding: 20 },
+            labels: { color: document.body.classList.contains('light-mode') ? '#1a1a1a' : '#ffffff', padding: 20 },
           },
         },
       },
