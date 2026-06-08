@@ -123,8 +123,7 @@ class ConnectionManager:
     def __init__(self):
         self.conexiones_activas: dict[str, WebSocket] = {}
 
-    async def conectar(self, websocket: WebSocket, correo: str):
-        await websocket.accept()
+    def conectar(self, websocket: WebSocket, correo: str):
         self.conexiones_activas[correo] = websocket
 
     def desconectar(self, correo: str):
@@ -143,8 +142,9 @@ manager = ConnectionManager()
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket, correo: str = Query(...)):
+    await websocket.accept()
     correo = unquote(correo)
-    await manager.conectar(websocket, correo)
+    manager.conectar(websocket, correo)
     try:
         while True:
             await websocket.receive_text()
