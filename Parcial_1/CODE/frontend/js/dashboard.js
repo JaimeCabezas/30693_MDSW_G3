@@ -69,6 +69,8 @@ function _mostrarToast(texto) {
   }, 4000);
 }
 
+let miGrafico = null;
+
 // ── Modo Claro / Oscuro ────────────────────────────────────────────────────────
 
 const themeToggleBtn = document.getElementById('theme-toggle');
@@ -82,7 +84,7 @@ const applyTheme = (isLight) => {
     themeToggleBtn.textContent = '☀️ Modo Claro';
   }
 
-  if (miGrafico) {
+  if (typeof miGrafico !== 'undefined' && miGrafico) {
     miGrafico.options.plugins.legend.labels.color = isLight ? '#1a1a1a' : '#ffffff';
     miGrafico.update();
   }
@@ -96,7 +98,6 @@ themeToggleBtn.addEventListener('click', () => {
   localStorage.setItem('theme', isLight ? 'light' : 'dark');
 });
 
-let miGrafico = null;
 let documentosActuales = [];
 let mensajesChatActual = [];
 
