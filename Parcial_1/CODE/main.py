@@ -14,7 +14,8 @@ from deep_translator import GoogleTranslator
 
 from bson import ObjectId
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile, WebSocket, WebSocketDisconnect
+from urllib.parse import unquote
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -140,8 +141,9 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-@app.websocket("/ws/{correo}")
-async def websocket_endpoint(websocket: WebSocket, correo: str):
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket, correo: str = Query(...)):
+    correo = unquote(correo)
     await manager.conectar(websocket, correo)
     try:
         while True:

@@ -13,7 +13,7 @@ let _ws = null;
 
 function _conectarWebSocket() {
   if (!_wsCorreo) return;
-  _ws = new WebSocket(`wss://united-republic-api.onrender.com/ws/${encodeURIComponent(_wsCorreo)}`);
+  _ws = new WebSocket(`wss://united-republic-api.onrender.com/ws?correo=${encodeURIComponent(_wsCorreo)}`);
 
   _ws.onmessage = (event) => {
     try {
