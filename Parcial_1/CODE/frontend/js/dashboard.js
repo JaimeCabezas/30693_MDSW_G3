@@ -25,6 +25,8 @@ function _conectarWebSocket() {
       contador.textContent = actual + 1;
       contador.classList.remove('hidden');
 
+      _inyectarAlertaEnPanel(data.mensaje, data.titulo);
+
       if (document.getElementById('modal-chat').classList.contains('hidden')) {
         _mostrarToast(data.mensaje);
       }
@@ -32,6 +34,26 @@ function _conectarWebSocket() {
   };
 
   _ws.onclose = () => setTimeout(_conectarWebSocket, 3000);
+}
+
+function _crearItemAlerta(mensaje, titulo, color) {
+  const item = document.createElement('li');
+  item.className = 'px-4 py-3 hover:bg-white/10 transition-colors border-b border-white/5';
+  const colorClase = color === 'purple' ? 'text-purple-400' : 'text-red-400';
+  const icono      = color === 'purple' ? '💬 ' : '';
+  item.innerHTML = `
+    <p class="text-xs font-semibold ${colorClase}">${icono}${mensaje}</p>
+    <p class="text-sm text-gray-200 mt-0.5">${titulo}</p>
+  `;
+  return item;
+}
+
+function _inyectarAlertaEnPanel(mensaje, titulo) {
+  const lista = document.getElementById('lista-alertas');
+  if (lista.children.length === 1 && lista.children[0].textContent.trim() === 'No hay alertas') {
+    lista.innerHTML = '';
+  }
+  lista.insertBefore(_crearItemAlerta(mensaje, titulo || 'Nuevo mensaje en el chat', 'purple'), lista.firstChild);
 }
 
 function _mostrarToast(texto) {
@@ -602,29 +624,26 @@ document.getElementById('btn-alertas').addEventListener('click', () => {
 
 async function cargarAlertas() {
   try {
-    const response = await fetch('https://united-republic-api.onrender.com/alertas', {
-      headers: { 'Authorization': 'Bearer ' + token },
-    });
+    const headers = { 'Authorization': 'Bearer ' + token };
+    const [resAlertas, resNotifs] = await Promise.all([
+      fetch('https://united-republic-api.onrender.com/alertas',       { headers }),
+      fetch('https://united-republic-api.onrender.com/notificaciones', { headers }),
+    ]);
 
-    if (!response.ok) return;
+    const alertas = resAlertas.ok ? await resAlertas.json() : [];
+    const notifs  = resNotifs.ok  ? await resNotifs.json()  : [];
 
-    const alertas = await response.json();
     const contador = document.getElementById('contador-alertas');
     const lista    = document.getElementById('lista-alertas');
     lista.innerHTML = '';
 
-    if (alertas.length > 0) {
+    const total = alertas.length + notifs.length;
+
+    if (total > 0) {
       contador.classList.remove('hidden');
-      contador.textContent = alertas.length;
-      alertas.forEach((alerta) => {
-        const item = document.createElement('li');
-        item.className = 'px-4 py-3 hover:bg-white/10 transition-colors';
-        item.innerHTML = `
-          <p class="text-xs font-semibold text-red-400">${alerta.mensaje}</p>
-          <p class="text-sm text-gray-200 mt-0.5">${alerta.titulo}</p>
-        `;
-        lista.appendChild(item);
-      });
+      contador.textContent = total;
+      notifs.forEach((n) => lista.appendChild(_crearItemAlerta(n.mensaje, n.titulo, 'purple')));
+      alertas.forEach((a) => lista.appendChild(_crearItemAlerta(a.mensaje, a.titulo, 'red')));
     } else {
       contador.classList.add('hidden');
       const item = document.createElement('li');

@@ -25,7 +25,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from passlib.context import CryptContext
 import jwt
 
-from models import DocumentoCreate, DocumentoUpdate, Evaluacion, MensajeChat, Usuario, UsuarioCreate, UsuarioUpdate
+from models import DocumentoCreate, DocumentoUpdate, Evaluacion, MensajeChat, Notificacion, Usuario, UsuarioCreate, UsuarioUpdate
 
 # Cargar las variables del archivo .env
 load_dotenv()
@@ -479,14 +479,25 @@ async def enviar_mensaje(request: Request, documento_id: str, datos: MensajeChat
         {"$push": {"mensajes": nuevo_mensaje}}
     )
 
-    # Notificar al receptor vía WebSocket si está conectado
+    # Persistir notificación y emitir WebSocket al receptor
     remitente = usuario_actual["correo"]
+    titulo_doc = documento.get("titulo", "documento")
     posibles_receptores = {documento.get("asignado_a"), documento.get("creado_por")}
     for receptor in posibles_receptores:
         if receptor and receptor != remitente:
+            ahora = datetime.now().isoformat()
+            notif = {
+                "usuario_receptor": receptor,
+                "titulo": "Nuevo mensaje en el chat",
+                "mensaje": f"Nuevo mensaje en {titulo_doc}",
+                "fecha": ahora,
+                "leida": False,
+            }
+            await request.app.state.db["notificaciones"].insert_one(notif)
             await manager.notificar(receptor, {
                 "tipo": "nueva_alerta",
-                "mensaje": "Tienes un mensaje nuevo en el chat"
+                "titulo": notif["titulo"],
+                "mensaje": notif["mensaje"],
             })
 
     return {"mensaje": "Mensaje enviado exitosamente"}
@@ -548,6 +559,20 @@ async def obtener_alertas(request: Request, usuario_actual: dict = Depends(obten
                 pass
 
     return alertas
+
+
+# ==========================================
+# 5b. RUTAS Y ENDPOINTS - NOTIFICACIONES DE CHAT
+# ==========================================
+
+@app.get("/notificaciones")
+async def obtener_notificaciones(request: Request, usuario_actual: dict = Depends(obtener_usuario_actual)):
+    notifs = await request.app.state.db["notificaciones"].find(
+        {"usuario_receptor": usuario_actual["correo"], "leida": False}
+    ).sort("fecha", -1).to_list(length=50)
+    for n in notifs:
+        n["_id"] = str(n["_id"])
+    return notifs
 
 
 # ==========================================

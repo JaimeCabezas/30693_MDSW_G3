@@ -77,3 +77,11 @@ class Evaluacion(BaseModel):
 
 class MensajeChat(BaseModel):
     mensaje: str
+
+
+class Notificacion(BaseModel):
+    usuario_receptor: str
+    titulo: str
+    mensaje: str
+    fecha: str
+    leida: bool = False
