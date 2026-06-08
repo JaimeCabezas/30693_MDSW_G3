@@ -1007,11 +1007,22 @@ async function cargarAuditoria() {
       const fecha = new Date(log.fecha).toLocaleString('es-CL');
       const fila = document.createElement('tr');
       fila.className = 'hover:bg-white/10 transition-colors border-b border-white/10 text-sm text-gray-300';
+
+      const celdaAcciones = rol === 'superadmin'
+        ? `<td class="px-6 py-3">
+             <button onclick="eliminarLogAuditoria('${log._id}', this)"
+               class="bg-red-500 hover:bg-red-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
+               🗑 Eliminar
+             </button>
+           </td>`
+        : '<td></td>';
+
       fila.innerHTML = `
         <td class="px-6 py-3 whitespace-nowrap">${fecha}</td>
         <td class="px-6 py-3">${log.usuario}</td>
         <td class="px-6 py-3 font-medium text-white">${log.accion}</td>
         <td class="px-6 py-3">${log.detalles || '-'}</td>
+        ${celdaAcciones}
       `;
       tbody.appendChild(fila);
     });
@@ -1019,6 +1030,29 @@ async function cargarAuditoria() {
     // silencioso
   }
 }
+
+window.eliminarLogAuditoria = async (id, btn) => {
+  if (!confirm('¿Estás seguro de que deseas eliminar este registro del historial?')) return;
+
+  try {
+    const response = await fetch(`https://united-republic-api.onrender.com/auditoria/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token },
+    });
+
+    if (response.ok) {
+      const fila = btn.closest('tr');
+      fila.style.transition = 'opacity 0.3s ease';
+      fila.style.opacity = '0';
+      setTimeout(() => fila.remove(), 300);
+    } else {
+      const error = await response.json();
+      alert('Error: ' + (error.detail || 'No se pudo eliminar el registro.'));
+    }
+  } catch {
+    alert('No se pudo conectar con el servidor.');
+  }
+};
 
 // ── Cerrar sesión ──────────────────────────────────────────────────────────────
 

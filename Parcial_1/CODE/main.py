@@ -621,6 +621,14 @@ async def obtener_auditoria(request: Request, usuario_actual: dict = Depends(req
     return logs
 
 
+@app.delete("/auditoria/{log_id}")
+async def eliminar_log_auditoria(request: Request, log_id: str, usuario_actual: dict = Depends(requerir_rol(["superadmin"]))):
+    resultado = await request.app.state.db["auditoria"].delete_one({"_id": ObjectId(log_id)})
+    if resultado.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Registro no encontrado")
+    return {"mensaje": "Registro eliminado exitosamente"}
+
+
 # ==========================================
 # 8. RUTAS Y ENDPOINTS - IA
 # ==========================================
