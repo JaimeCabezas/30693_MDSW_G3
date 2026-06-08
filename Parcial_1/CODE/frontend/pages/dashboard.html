@@ -144,6 +144,57 @@
       color: #64748b !important;
     }
 
+    /* ── Modal Chat: Modo Claro ─────────────────────────────────────────── */
+
+    /* Contenedor interno del modal */
+    body.light-mode #modal-chat > div {
+      background-color: #f8fafc !important;
+      border-color: #e2e8f0 !important;
+    }
+
+    /* Cabecera y pie del modal */
+    body.light-mode #modal-chat h3 {
+      color: #1e293b !important;
+    }
+
+    body.light-mode #modal-chat #btn-cerrar-chat {
+      color: #64748b !important;
+    }
+
+    body.light-mode #modal-chat .border-b,
+    body.light-mode #modal-chat .border-t {
+      border-color: #e2e8f0 !important;
+    }
+
+    /* Burbujas recibidas (bg-slate-700): fondo gris claro + texto oscuro */
+    body.light-mode #caja-mensajes > div[class*="bg-slate"] {
+      background-color: #e2e8f0 !important;
+      color: #1a1a1a !important;
+    }
+
+    /* Burbujas de IA (bg-purple-900): fondo lila claro + texto oscuro */
+    body.light-mode #caja-mensajes > div[class*="bg-purple"] {
+      background-color: #ede9fe !important;
+      border-color: #c4b5fd !important;
+      color: #3b0764 !important;
+    }
+
+    /* Fuerza herencia del color en los <p> de todas las burbujas (mensaje + remitente/hora) */
+    body.light-mode #caja-mensajes > div p {
+      color: inherit !important;
+    }
+
+    /* Input y botón del chat */
+    body.light-mode #input-mensaje {
+      background-color: #f1f5f9 !important;
+      border-color: #cbd5e1 !important;
+      color: #1e293b !important;
+    }
+
+    body.light-mode #input-mensaje::placeholder {
+      color: #94a3b8 !important;
+    }
+
     /* ── Responsivo ───────────────────────────────────────────────────────── */
     @media (max-width: 768px) {
       /* Panel de alertas: anclado al viewport para centrado perfecto en móvil */
