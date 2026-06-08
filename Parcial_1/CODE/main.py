@@ -14,7 +14,7 @@ from deep_translator import GoogleTranslator
 
 from bson import ObjectId
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -112,6 +112,43 @@ os.makedirs('uploads', exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 intentos_login = {}
+
+
+# ==========================================
+# 0. WEBSOCKETS - GESTOR DE CONEXIONES
+# ==========================================
+
+class ConnectionManager:
+    def __init__(self):
+        self.conexiones_activas: dict[str, WebSocket] = {}
+
+    async def conectar(self, websocket: WebSocket, correo: str):
+        await websocket.accept()
+        self.conexiones_activas[correo] = websocket
+
+    def desconectar(self, correo: str):
+        self.conexiones_activas.pop(correo, None)
+
+    async def notificar(self, correo: str, data: dict):
+        ws = self.conexiones_activas.get(correo)
+        if ws:
+            try:
+                await ws.send_json(data)
+            except Exception:
+                self.desconectar(correo)
+
+manager = ConnectionManager()
+
+
+@app.websocket("/ws/{correo}")
+async def websocket_endpoint(websocket: WebSocket, correo: str):
+    await manager.conectar(websocket, correo)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.desconectar(correo)
+
 
 # ==========================================
 # 1. DEPENDENCIAS Y SEGURIDAD (El "Guardia")
@@ -439,6 +476,17 @@ async def enviar_mensaje(request: Request, documento_id: str, datos: MensajeChat
         {"_id": ObjectId(documento_id)},
         {"$push": {"mensajes": nuevo_mensaje}}
     )
+
+    # Notificar al receptor vía WebSocket si está conectado
+    remitente = usuario_actual["correo"]
+    posibles_receptores = {documento.get("asignado_a"), documento.get("creado_por")}
+    for receptor in posibles_receptores:
+        if receptor and receptor != remitente:
+            await manager.notificar(receptor, {
+                "tipo": "nueva_alerta",
+                "mensaje": "Tienes un mensaje nuevo en el chat"
+            })
+
     return {"mensaje": "Mensaje enviado exitosamente"}
 
 

@@ -3,6 +3,50 @@ if (!token) {
   window.location.href = '../index.html';
 }
 
+// ── WebSocket: notificaciones en tiempo real ────────────────────────────────
+
+const _wsCorreo = (() => {
+  try { return JSON.parse(atob(token.split('.')[1])).sub; } catch { return null; }
+})();
+
+let _ws = null;
+
+function _conectarWebSocket() {
+  if (!_wsCorreo) return;
+  _ws = new WebSocket(`wss://united-republic-api.onrender.com/ws/${encodeURIComponent(_wsCorreo)}`);
+
+  _ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      if (data.tipo !== 'nueva_alerta') return;
+
+      const contador = document.getElementById('contador-alertas');
+      const actual = parseInt(contador.textContent) || 0;
+      contador.textContent = actual + 1;
+      contador.classList.remove('hidden');
+
+      if (document.getElementById('modal-chat').classList.contains('hidden')) {
+        _mostrarToast(data.mensaje);
+      }
+    } catch { /* silencioso */ }
+  };
+
+  _ws.onclose = () => setTimeout(_conectarWebSocket, 3000);
+}
+
+function _mostrarToast(texto) {
+  const div = document.createElement('div');
+  div.className = 'fixed bottom-6 right-6 bg-purple-700 text-white px-5 py-3 rounded-xl shadow-2xl text-sm z-50 flex items-center gap-3';
+  div.style.cssText = 'transition: opacity 0.4s ease; opacity: 0;';
+  div.innerHTML = `<span class="text-xl">💬</span><span>${texto}</span>`;
+  document.body.appendChild(div);
+  requestAnimationFrame(() => { div.style.opacity = '1'; });
+  setTimeout(() => {
+    div.style.opacity = '0';
+    setTimeout(() => div.remove(), 400);
+  }, 4000);
+}
+
 // ── Modo Claro / Oscuro ────────────────────────────────────────────────────────
 
 const themeToggleBtn = document.getElementById('theme-toggle');
@@ -962,3 +1006,4 @@ document.getElementById('btn-cerrar-sesion').addEventListener('click', () => {
 
 cargarDocumentos();
 cargarAlertas();
+_conectarWebSocket();
