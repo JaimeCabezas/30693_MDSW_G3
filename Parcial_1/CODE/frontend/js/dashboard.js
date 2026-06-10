@@ -1,5 +1,5 @@
-const API_URL = 'https://united-republic-web.onrender.com';
-const WS_URL = 'wss://united-republic-web.onrender.com/ws';
+const API_URL = 'https://united-republic-api.onrender.com';
+const WS_URL = 'wss://united-republic-api.onrender.com/ws';
 
 const token = localStorage.getItem('token');
 if (!token) {
