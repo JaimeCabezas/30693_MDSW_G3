@@ -1,3 +1,6 @@
+const API_URL = 'https://united-republic-web.onrender.com';
+const WS_URL = 'wss://united-republic-web.onrender.com/ws';
+
 const token = localStorage.getItem('token');
 if (!token) {
   window.location.href = '../index.html';
@@ -13,7 +16,7 @@ let _ws = null;
 
 function _conectarWebSocket() {
   if (!_wsCorreo) return;
-  _ws = new WebSocket(`wss://united-republic-api.onrender.com/ws?correo=${encodeURIComponent(_wsCorreo)}`);
+  _ws = new WebSocket(`${WS_URL}/ws?correo=${encodeURIComponent(_wsCorreo)}`);
 
   _ws.onmessage = (event) => {
     try {
@@ -99,7 +102,6 @@ themeToggleBtn.addEventListener('click', () => {
 });
 
 let documentosActuales = [];
-let mensajesChatActual = [];
 
 const obtenerRol = () => {
   try {
@@ -111,7 +113,7 @@ const obtenerRol = () => {
 };
 
 const normalizeUrl = (ruta) =>
-  'https://united-republic-api.onrender.com/' + ruta.split('\\\\').join('/').split('\\').join('/');
+  `${API_URL}/` + ruta.split('\\\\').join('/').split('\\').join('/');
 
 // ── Visibilidad según rol ──────────────────────────────────────────────────────
 
@@ -121,6 +123,10 @@ if (rol === 'superadmin' || rol === 'admin') {
   document.getElementById('btn-nav-usuarios').classList.remove('hidden');
   document.getElementById('btn-nav-estadisticas').classList.remove('hidden');
   document.getElementById('btn-nav-auditoria').classList.remove('hidden');
+}
+
+if (rol === 'superadmin') {
+  document.getElementById('btn-ajustar-tarifa').classList.remove('hidden');
 }
 
 if (rol === 'traductor') {
@@ -159,11 +165,58 @@ document.getElementById('btn-nav-auditoria').addEventListener('click', () => {
   cargarAuditoria();
 });
 
+// ── Modal: Ajustar Tarifa ─────────────────────────────────────────────────────
+
+document.getElementById('btn-ajustar-tarifa').addEventListener('click', async () => {
+  try {
+    const response = await fetch(`${API_URL}/configuracion/costo`, {
+      headers: { 'Authorization': 'Bearer ' + token },
+    });
+    if (response.ok) {
+      const data = await response.json();
+      document.getElementById('input-costo-pagina').value = data.costo_por_pagina;
+    }
+  } catch { /* silencioso */ }
+  document.getElementById('modal-ajustar-tarifa').classList.remove('hidden');
+});
+
+document.getElementById('btn-cancelar-tarifa').addEventListener('click', () => {
+  document.getElementById('modal-ajustar-tarifa').classList.add('hidden');
+});
+
+document.getElementById('form-ajustar-tarifa').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const nuevoCosto = parseFloat(document.getElementById('input-costo-pagina').value);
+  if (isNaN(nuevoCosto) || nuevoCosto < 0) {
+    alert('Ingresa un valor válido para el costo.');
+    return;
+  }
+  try {
+    const response = await fetch(`${API_URL}/configuracion/costo`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+      },
+      body: JSON.stringify({ costo_por_pagina: nuevoCosto }),
+    });
+    if (response.ok) {
+      alert('Tarifa actualizada exitosamente.');
+      document.getElementById('modal-ajustar-tarifa').classList.add('hidden');
+    } else {
+      const error = await response.json();
+      alert('Error: ' + (error.detail || 'No se pudo actualizar la tarifa.'));
+    }
+  } catch {
+    alert('No se pudo conectar con el servidor.');
+  }
+});
+
 // ── Cargar traductores en el select del modal ──────────────────────────────────
 
 async function cargarTraductoresEnSelect() {
   try {
-    const response = await fetch('https://united-republic-api.onrender.com/usuarios', {
+    const response = await fetch(`${API_URL}/usuarios`, {
       headers: { 'Authorization': 'Bearer ' + token },
     });
     if (!response.ok) return;
@@ -203,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const response = await fetch(
-        `https://united-republic-api.onrender.com/documentos/${documentoActivoParaTraduccion}/traduccion`,
+        `${API_URL}/documentos/${documentoActivoParaTraduccion}/traduccion`,
         {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + token },
@@ -231,7 +284,7 @@ let documentosCargados = [];
 
 async function cargarDocumentos() {
   try {
-    const response = await fetch('https://united-republic-api.onrender.com/documentos', {
+    const response = await fetch(`${API_URL}/documentos`, {
       method: 'GET',
       headers: { 'Authorization': 'Bearer ' + token },
     });
@@ -298,7 +351,7 @@ window.eliminarDocumento = async (id) => {
   if (!confirm('¿Seguro que deseas eliminar este documento?')) return;
 
   try {
-    const response = await fetch(`https://united-republic-api.onrender.com/documentos/${id}`, {
+    const response = await fetch(`${API_URL}/documentos/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': 'Bearer ' + token },
     });
@@ -387,11 +440,8 @@ formCrear.addEventListener('submit', async (e) => {
   formData.append('comentarios',     document.getElementById('input-comentarios').value);
   formData.append('archivo_origen',  inputFile.files[0]);
 
-  const costoVal = document.getElementById('input-costo').value;
-  if (costoVal !== '') formData.append('costo', costoVal);
-
   try {
-    const response = await fetch('https://united-republic-api.onrender.com/documentos', {
+    const response = await fetch(`${API_URL}/documentos`, {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token },
       body: formData,
@@ -417,7 +467,7 @@ let usuariosCargados = [];
 
 async function cargarUsuarios() {
   try {
-    const response = await fetch('https://united-republic-api.onrender.com/usuarios', {
+    const response = await fetch(`${API_URL}/usuarios`, {
       headers: { 'Authorization': 'Bearer ' + token },
     });
 
@@ -466,7 +516,7 @@ window.eliminarUsuario = async (id) => {
   if (!confirm('¿Seguro que deseas eliminar este usuario?')) return;
 
   try {
-    const response = await fetch(`https://united-republic-api.onrender.com/usuarios/${id}`, {
+    const response = await fetch(`${API_URL}/usuarios/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': 'Bearer ' + token },
     });
@@ -532,7 +582,7 @@ formCrearUsuario.addEventListener('submit', async (e) => {
   const payload = { nombre, correo, rol };
   if (password !== '') payload.password = password;
 
-  const url    = userId ? `https://united-republic-api.onrender.com/usuarios/${userId}` : 'https://united-republic-api.onrender.com/usuarios';
+  const url    = userId ? `${API_URL}/usuarios/${userId}` : `${API_URL}/usuarios`;
   const method = userId ? 'PUT' : 'POST';
 
   // POST requiere password
@@ -567,14 +617,14 @@ formCrearUsuario.addEventListener('submit', async (e) => {
 
 window.iniciarTraduccion = async (id, urlRaw) => {
   try {
-    await fetch(`https://united-republic-api.onrender.com/documentos/${id}/iniciar`, {
+    await fetch(`${API_URL}/documentos/${id}/iniciar`, {
       method: 'PUT',
       headers: { 'Authorization': 'Bearer ' + token },
     });
   } catch {
     // continúa aunque falle el cambio de estado
   }
-  window.open('https://united-republic-api.onrender.com/' + urlRaw, '_blank');
+  window.open(`${API_URL}/` + urlRaw, '_blank');
   await cargarDocumentos();
 };
 
@@ -597,7 +647,7 @@ async function enviarEvaluacion(aprobado) {
   const feedback = document.getElementById('input-feedback').value;
 
   try {
-    const response = await fetch(`https://united-republic-api.onrender.com/documentos/${id}/evaluar`, {
+    const response = await fetch(`${API_URL}/documentos/${id}/evaluar`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -632,8 +682,8 @@ async function cargarAlertas() {
   try {
     const headers = { 'Authorization': 'Bearer ' + token };
     const [resAlertas, resNotifs] = await Promise.all([
-      fetch('https://united-republic-api.onrender.com/alertas',       { headers }),
-      fetch('https://united-republic-api.onrender.com/notificaciones', { headers }),
+      fetch(`${API_URL}/alertas`,       { headers }),
+      fetch(`${API_URL}/notificaciones`, { headers }),
     ]);
 
     const alertas = resAlertas.ok ? await resAlertas.json() : [];
@@ -666,7 +716,7 @@ async function cargarAlertas() {
 
 async function cargarEstadisticas() {
   try {
-    const response = await fetch('https://united-republic-api.onrender.com/estadisticas', {
+    const response = await fetch(`${API_URL}/estadisticas`, {
       headers: { 'Authorization': 'Bearer ' + token },
     });
     if (!response.ok) return;
@@ -827,10 +877,6 @@ window.verDetalle = (id) => {
         Descargar Original
       </button>`;
     }
-    acciones.innerHTML += `<button id="btn-ia-${doc._id}" onclick="generarBorradorIA('${doc._id}')"
-      class="bg-purple-600 hover:bg-purple-700 text-white font-medium px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(147,51,234,0.4)] hover:shadow-[0_0_25px_rgba(147,51,234,0.6)]">
-      ✨ Generar Borrador IA
-    </button>`;
     if (doc.estado === 'En proceso') {
       acciones.innerHTML += `<button onclick="prepararTraduccion('${doc._id}')"
         class="bg-blue-600 hover:bg-blue-500 text-white ${btnClass}">
@@ -842,44 +888,6 @@ window.verDetalle = (id) => {
   // Mostrar detalle
   document.getElementById('vista-documentos').classList.add('hidden');
   document.getElementById('vista-detalle-documento').classList.remove('hidden');
-};
-
-// ── Borrador IA ───────────────────────────────────────────────────────────────
-
-window.generarBorradorIA = async (id) => {
-  const btn = document.getElementById(`btn-ia-${id}`);
-  if (btn) {
-    btn.textContent = 'Procesando...';
-    btn.disabled = true;
-  }
-
-  try {
-    const response = await fetch(`https://united-republic-api.onrender.com/documentos/${id}/borrador-ia`, {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token },
-    });
-
-    if (response.ok) {
-      if (btn) {
-        btn.innerHTML = '✨ Generar Borrador IA';
-        btn.disabled = false;
-      }
-      await abrirChat(id);
-    } else {
-      const error = await response.json();
-      alert('Error: ' + (error.detail || 'No se pudo generar el borrador.'));
-      if (btn) {
-        btn.innerHTML = '✨ Generar Borrador IA';
-        btn.disabled = false;
-      }
-    }
-  } catch {
-    alert('No se pudo conectar con el servidor.');
-    if (btn) {
-      btn.innerHTML = '✨ Generar Borrador IA';
-      btn.disabled = false;
-    }
-  }
 };
 
 // ── Chat ───────────────────────────────────────────────────────────────────────
@@ -898,13 +906,12 @@ window.abrirChat = async (id) => {
 
 async function cargarMensajes(id) {
   try {
-    const response = await fetch(`https://united-republic-api.onrender.com/documentos/${id}/chat`, {
+    const response = await fetch(`${API_URL}/documentos/${id}/chat`, {
       headers: { 'Authorization': 'Bearer ' + token },
     });
     if (!response.ok) return;
 
     const mensajes = await response.json();
-    mensajesChatActual = mensajes;
     const cajaMensajes = document.getElementById('caja-mensajes');
     cajaMensajes.innerHTML = '';
 
@@ -924,17 +931,9 @@ async function cargarMensajes(id) {
           ? 'bg-purple-900/60 border border-purple-500/40 text-white self-start rounded-r-xl rounded-tl-xl p-3 max-w-[85%]'
           : 'bg-slate-700 text-white self-start rounded-r-xl rounded-tl-xl p-3 max-w-[80%]';
 
-      const btnDescarga = esIA
-        ? `<button onclick="descargarTxtIA(${index})"
-             class="mt-3 flex items-center gap-1 text-xs bg-purple-700/50 hover:bg-purple-600 border border-purple-500 text-white px-3 py-1.5 rounded-md transition-colors shadow-sm w-fit">
-             ⬇️ Descargar Borrador .txt
-           </button>`
-        : '';
-
       burbuja.innerHTML = `
         <p class="text-sm whitespace-pre-wrap">${msg.mensaje}</p>
         <p class="text-xs mt-1 opacity-60">${msg.remitente} · ${fecha}</p>
-        ${btnDescarga}
       `;
       cajaMensajes.appendChild(burbuja);
     });
@@ -945,22 +944,6 @@ async function cargarMensajes(id) {
   }
 }
 
-window.descargarTxtIA = (index) => {
-  const mensajeOriginal = mensajesChatActual[index].mensaje;
-  const textoLimpio = mensajeOriginal.replace('✨ **Borrador IA Generado:**\n\n', '');
-
-  const blob = new Blob([textoLimpio], { type: 'text/plain;charset=utf-8' });
-  const url  = URL.createObjectURL(blob);
-
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'Borrador_IA_UnitedRepublic.txt';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-};
-
 document.getElementById('form-chat').addEventListener('submit', async (e) => {
   e.preventDefault();
   const id    = document.getElementById('chat-doc-id').value;
@@ -969,7 +952,7 @@ document.getElementById('form-chat').addEventListener('submit', async (e) => {
   if (!texto) return;
 
   try {
-    const response = await fetch(`https://united-republic-api.onrender.com/documentos/${id}/chat`, {
+    const response = await fetch(`${API_URL}/documentos/${id}/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -994,7 +977,7 @@ document.getElementById('form-chat').addEventListener('submit', async (e) => {
 
 async function cargarAuditoria() {
   try {
-    const response = await fetch('https://united-republic-api.onrender.com/auditoria', {
+    const response = await fetch(`${API_URL}/auditoria`, {
       headers: { 'Authorization': 'Bearer ' + token },
     });
     if (!response.ok) return;
@@ -1035,7 +1018,7 @@ window.eliminarLogAuditoria = async (id, btn) => {
   if (!confirm('¿Estás seguro de que deseas eliminar este registro del historial?')) return;
 
   try {
-    const response = await fetch(`https://united-republic-api.onrender.com/auditoria/${id}`, {
+    const response = await fetch(`${API_URL}/auditoria/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': 'Bearer ' + token },
     });

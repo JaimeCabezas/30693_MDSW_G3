@@ -85,3 +85,7 @@ class Notificacion(BaseModel):
     mensaje: str
     fecha: str
     leida: bool = False
+
+
+class ConfiguracionCosto(BaseModel):
+    costo_por_pagina: float = 5.00

@@ -97,14 +97,16 @@
     /* ── Modales: Modo Oscuro — mejora de legibilidad ──────────────────────── */
     #modal-crear label, #modal-crear h3,
     #modal-usuario label, #modal-usuario h3,
-    #modal-evaluacion label, #modal-evaluacion h3 {
+    #modal-evaluacion label, #modal-evaluacion h3,
+    #modal-ajustar-tarifa label, #modal-ajustar-tarifa h3 {
       color: #e2e8f0 !important;
     }
 
     /* ── Modales: Modo Claro ────────────────────────────────────────────────── */
     body.light-mode #modal-crear > div,
     body.light-mode #modal-usuario > div,
-    body.light-mode #modal-evaluacion > div {
+    body.light-mode #modal-evaluacion > div,
+    body.light-mode #modal-ajustar-tarifa > div {
       background-color: #ffffff !important;
       border-color: #e2e8f0 !important;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
@@ -113,7 +115,8 @@
     body.light-mode #modal-crear label, body.light-mode #modal-crear h3,
     body.light-mode #modal-usuario label, body.light-mode #modal-usuario h3,
     body.light-mode #modal-evaluacion label, body.light-mode #modal-evaluacion h3,
-    body.light-mode #modal-evaluacion p {
+    body.light-mode #modal-evaluacion p,
+    body.light-mode #modal-ajustar-tarifa label, body.light-mode #modal-ajustar-tarifa h3 {
       color: #333333 !important;
     }
 
@@ -122,7 +125,8 @@
     body.light-mode #modal-crear textarea,
     body.light-mode #modal-usuario input,
     body.light-mode #modal-usuario select,
-    body.light-mode #modal-evaluacion textarea {
+    body.light-mode #modal-evaluacion textarea,
+    body.light-mode #modal-ajustar-tarifa input {
       background-color: #f8fafc !important;
       border: 1px solid #cbd5e1 !important;
       color: #333333 !important;
@@ -131,7 +135,8 @@
     body.light-mode #modal-crear input::placeholder,
     body.light-mode #modal-crear textarea::placeholder,
     body.light-mode #modal-usuario input::placeholder,
-    body.light-mode #modal-evaluacion textarea::placeholder {
+    body.light-mode #modal-evaluacion textarea::placeholder,
+    body.light-mode #modal-ajustar-tarifa input::placeholder {
       color: #94a3b8 !important;
     }
 
@@ -288,6 +293,13 @@
         class="hidden text-gray-200 hover:text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-all duration-300 text-sm"
       >
         Auditoría
+      </button>
+
+      <button
+        id="btn-ajustar-tarifa"
+        class="hidden text-gray-200 hover:text-white font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition-all duration-300 text-sm"
+      >
+        Ajustar Tarifa
       </button>
 
       <!-- Botón Alertas -->
@@ -536,16 +548,8 @@
           </select>
         </div>
 
-        <div id="contenedor-costo">
-          <label for="input-costo" class="block text-sm font-medium text-gray-200 mb-1">Costo</label>
-          <input
-            id="input-costo"
-            type="number"
-            step="0.01"
-            min="0"
-            placeholder="0.00"
-            class="bg-slate-800/50 border border-slate-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg px-4 py-2 w-full transition-all"
-          />
+        <div class="bg-gray-100 border border-gray-300 dark:bg-dark-900/30 dark:border-dark-500/50 px-4 py-3 rounded-lg transition-colors">
+         <span class="text-black dark:text-dark-100 text-sm font-medium">ℹ️ El costo se calculará automáticamente según el número de páginas del PDF subido.</span>
         </div>
 
         <div>
@@ -739,6 +743,41 @@
 
   <!-- Input oculto para subir traducción -->
   <input type="file" id="input-traduccion" class="hidden" accept=".pdf,.doc,.docx" />
+
+  <!-- ── Modal: Ajustar Tarifa ────────────────────────────────────────────────── -->
+  <div id="modal-ajustar-tarifa" class="hidden bg-black/60 backdrop-blur-sm fixed inset-0 z-50 flex items-center justify-center">
+    <div class="bg-slate-800/90 border border-slate-600 rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.5)] w-full max-w-sm p-6">
+      <h3 class="text-xl font-bold text-white mb-4">Ajustar Tarifa por Página</h3>
+      <form id="form-ajustar-tarifa" class="space-y-4">
+        <div>
+          <label for="input-costo-pagina" class="block text-sm font-medium text-gray-200 mb-1">Costo por página (USD)</label>
+          <input
+            id="input-costo-pagina"
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="5.00"
+            class="bg-slate-800/50 border border-slate-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg px-4 py-2 w-full transition-all"
+          />
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button
+            type="submit"
+            class="flex-1 bg-blue-600/80 hover:bg-blue-600 text-white font-medium py-2.5 rounded-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_5px_15px_rgba(0,0,0,0.3)]"
+          >
+            Guardar
+          </button>
+          <button
+            type="button"
+            id="btn-cancelar-tarifa"
+            class="flex-1 bg-white/10 hover:bg-white/20 text-gray-200 font-medium py-2.5 rounded-lg transition-all duration-300 border border-white/20"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script src="../js/dashboard.js"></script>
 </body>

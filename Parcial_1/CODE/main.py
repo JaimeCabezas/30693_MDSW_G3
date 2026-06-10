@@ -1,4 +1,4 @@
-import asyncio
+import io
 import os
 import shutil
 import smtplib
@@ -7,10 +7,7 @@ from datetime import datetime, timedelta, timezone
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-import docx
 import PyPDF2
-
-from deep_translator import GoogleTranslator
 
 from bson import ObjectId
 from dotenv import load_dotenv
@@ -25,7 +22,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from passlib.context import CryptContext
 import jwt
 
-from models import DocumentoCreate, DocumentoUpdate, Evaluacion, MensajeChat, Notificacion, Usuario, UsuarioCreate, UsuarioUpdate
+from models import ConfiguracionCosto, DocumentoCreate, DocumentoUpdate, Evaluacion, MensajeChat, Notificacion, Usuario, UsuarioCreate, UsuarioUpdate
 
 # Cargar las variables del archivo .env
 load_dotenv()
@@ -293,7 +290,6 @@ async def crear_documento(
     fecha_entrega: str = Form(...),
     asignado_a: str = Form(...),
     comentarios: str = Form(""),
-    costo: float = Form(None),
     archivo_origen: UploadFile = File(...),
     usuario_actual: dict = Depends(obtener_usuario_actual),
 ):
@@ -304,10 +300,25 @@ async def crear_documento(
     ]:
         raise HTTPException(status_code=400, detail="Formato no permitido. Solo PDF o Word.")
 
+    contenido = await archivo_origen.read()
+
     nombre_archivo = f"origen_{titulo.replace(' ', '_')}_{archivo_origen.filename}"
     ruta_origen = os.path.join("uploads", nombre_archivo)
     with open(ruta_origen, "wb") as buffer:
-        shutil.copyfileobj(archivo_origen.file, buffer)
+        buffer.write(contenido)
+
+    # Contar páginas para calcular el costo automáticamente
+    num_paginas = 1
+    if archivo_origen.content_type == "application/pdf":
+        try:
+            lector = PyPDF2.PdfReader(io.BytesIO(contenido))
+            num_paginas = len(lector.pages)
+        except Exception:
+            num_paginas = 1
+
+    config = await request.app.state.db["configuracion"].find_one({"tipo": "costo"})
+    costo_por_pagina = config["costo_por_pagina"] if config else 5.00
+    costo = num_paginas * costo_por_pagina
 
     nuevo_documento = {
         "titulo": titulo,
@@ -322,9 +333,8 @@ async def crear_documento(
         "archivo_traduccion_url": None,
         "creado_por": usuario_actual["correo"],
         "mensajes": [],
+        "costo": costo,
     }
-    if costo is not None and usuario_actual["rol"] != "traductor":
-        nuevo_documento["costo"] = costo
 
     await request.app.state.db["documentos"].insert_one(nuevo_documento)
     await registrar_log(usuario_actual["correo"], "Crear Documento", f"Título: {titulo}")
@@ -630,56 +640,22 @@ async def eliminar_log_auditoria(request: Request, log_id: str, usuario_actual: 
 
 
 # ==========================================
-# 8. RUTAS Y ENDPOINTS - IA
+# 8. RUTAS Y ENDPOINTS - CONFIGURACIÓN
 # ==========================================
 
-@app.post("/documentos/{documento_id}/borrador-ia")
-async def generar_borrador_ia(request: Request, documento_id: str, usuario_actual: dict = Depends(obtener_usuario_actual)):
-    doc = await request.app.state.db["documentos"].find_one({"_id": ObjectId(documento_id)})
-    if doc is None:
-        raise HTTPException(status_code=404, detail="Documento no encontrado")
+@app.get("/configuracion/costo")
+async def obtener_configuracion_costo(request: Request, usuario_actual: dict = Depends(obtener_usuario_actual)):
+    config = await request.app.state.db["configuracion"].find_one({"tipo": "costo"})
+    if not config:
+        return {"costo_por_pagina": 5.00}
+    return {"costo_por_pagina": config["costo_por_pagina"]}
 
-    ruta_archivo = doc.get("archivo_origen_url")
-    if not ruta_archivo or not os.path.exists(ruta_archivo):
-        raise HTTPException(status_code=404, detail="Archivo físico del documento no encontrado")
 
-    texto_extraido = ""
-    try:
-        if ruta_archivo.endswith(".docx"):
-            doc_word = docx.Document(ruta_archivo)
-            for para in doc_word.paragraphs:
-                texto_extraido += para.text + "\n"
-        elif ruta_archivo.endswith(".pdf"):
-            lector = PyPDF2.PdfReader(ruta_archivo)
-            for pagina in lector.pages:
-                texto_extraido += (pagina.extract_text() or "") + "\n"
-        elif ruta_archivo.endswith(".txt"):
-            with open(ruta_archivo, "r", encoding="utf-8") as f:
-                texto_extraido = f.read()
-    except Exception:
-        raise HTTPException(status_code=500, detail="Error al leer el archivo del documento.")
-
-    texto_origen = texto_extraido[:3000]
-    if not texto_origen.strip():
-        raise HTTPException(status_code=400, detail="No se pudo extraer texto del documento.")
-
-    try:
-        texto_traducido = await asyncio.to_thread(
-            GoogleTranslator(source="auto", target="es").translate, texto_origen
-        )
-    except Exception:
-        raise HTTPException(status_code=500, detail="Error al conectar con el servicio de traducción.")
-
-    mensaje_ia = f"✨ **Borrador IA Generado:**\n\n{texto_traducido}"
-
-    await request.app.state.db["documentos"].update_one(
-        {"_id": ObjectId(documento_id)},
-        {"$push": {"mensajes": {
-            "remitente": "Sistema IA 🤖",
-            "mensaje": mensaje_ia,
-            "fecha": datetime.now().isoformat(),
-        }}}
+@app.put("/configuracion/costo")
+async def actualizar_configuracion_costo(request: Request, datos: ConfiguracionCosto, usuario_actual: dict = Depends(requerir_rol(["superadmin"]))):
+    await request.app.state.db["configuracion"].update_one(
+        {"tipo": "costo"},
+        {"$set": {"tipo": "costo", "costo_por_pagina": datos.costo_por_pagina}},
+        upsert=True,
     )
-
-    await registrar_log(usuario_actual["correo"], "Borrador IA Generado", f"Doc ID: {documento_id}")
-    return {"mensaje": "Borrador IA generado y guardado en el chat del documento."}
+    return {"mensaje": "Costo actualizado exitosamente", "costo_por_pagina": datos.costo_por_pagina}

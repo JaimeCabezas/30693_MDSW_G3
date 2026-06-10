@@ -1,3 +1,6 @@
+const API_URL = 'https://united-republic-web.onrender.com';
+const WS_URL = 'wss://united-republic-web.onrender.com/ws';
+
 // ── Modo Claro / Oscuro ────────────────────────────────────────────────────────
 
 const themeToggleBtn = document.getElementById('theme-toggle');
@@ -33,7 +36,7 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
   body.append('password', password);
 
   try {
-    const response = await fetch('https://united-republic-api.onrender.com/login', {
+    const response = await fetch(`${API_URL}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body,
