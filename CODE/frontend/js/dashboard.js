@@ -27,12 +27,8 @@ function _conectarWebSocket() {
       const data = JSON.parse(event.data);
       if (data.tipo !== 'nueva_alerta') return;
 
-      const contador = document.getElementById('contador-alertas');
-      const actual = parseInt(contador.textContent) || 0;
-      contador.textContent = actual + 1;
-      contador.classList.remove('hidden');
-
-      _inyectarAlertaEnPanel(data.mensaje, data.titulo);
+      _actualizarContador(1);
+      _inyectarAlertaEnPanel(data.mensaje, data.titulo, data.id);
 
       if (document.getElementById('modal-chat').classList.contains('hidden')) {
         _mostrarToast(data.mensaje);
@@ -47,24 +43,117 @@ function _conectarWebSocket() {
   };
 }
 
-function _crearItemAlerta(mensaje, titulo, color) {
+// ── Notificaciones: descarte individual y "limpiar todo" ────────────────────
+// Las "alertas" las recalcula el backend en cada carga (no tienen _id propio),
+// así que su descarte se recuerda en localStorage por clave titulo+mensaje.
+// Las "notificaciones" (chat) sí están persistidas en Mongo con _id, así que
+// su descarte se sincroniza contra el backend para que no reaparezcan.
+
+function _claveAlerta(titulo, mensaje) {
+  return `${titulo}||${mensaje}`;
+}
+
+function _obtenerAlertasDescartadas() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(`alertas_descartadas_${_wsCorreo}`) || '[]'));
+  } catch {
+    return new Set();
+  }
+}
+
+function _guardarAlertasDescartadas(set) {
+  localStorage.setItem(`alertas_descartadas_${_wsCorreo}`, JSON.stringify([...set]));
+}
+
+async function _marcarNotificacionLeida(id) {
+  try {
+    await fetch(`${API_URL}/notificaciones/${id}/leer`, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + token },
+    });
+  } catch { /* silencioso: la notificacion ya se quitó del panel igualmente */ }
+}
+
+async function _marcarTodasNotificacionesLeidas() {
+  try {
+    await fetch(`${API_URL}/notificaciones/leer-todas`, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + token },
+    });
+  } catch { /* silencioso */ }
+}
+
+function _actualizarContador(delta) {
+  const contador = document.getElementById('contador-alertas');
+  const actual = Math.max(0, (parseInt(contador.textContent) || 0) + delta);
+  if (actual > 0) {
+    contador.textContent = actual;
+    contador.classList.remove('hidden');
+  } else {
+    contador.textContent = '';
+    contador.classList.add('hidden');
+  }
+}
+
+function _mostrarListaVacia() {
+  const lista = document.getElementById('lista-alertas');
+  lista.innerHTML = '';
   const item = document.createElement('li');
-  item.className = 'px-4 py-3 hover:bg-white/10 transition-colors border-b border-white/5';
+  item.className = 'px-4 py-4 text-sm text-gray-400 text-center';
+  item.textContent = 'No tienes notificaciones pendientes';
+  lista.appendChild(item);
+}
+
+function _crearItemAlerta(mensaje, titulo, color, meta = {}) {
+  const item = document.createElement('li');
+  item.className = 'relative px-4 py-3 pr-8 hover:bg-white/10 transition-colors border-b border-white/5';
+  item.dataset.tipo = meta.tipo || '';
+  if (meta.id) item.dataset.id = meta.id;
+  item.dataset.titulo = titulo;
+  item.dataset.mensaje = mensaje;
+
   const colorClase = color === 'purple' ? 'text-purple-400' : 'text-red-400';
   const icono      = color === 'purple' ? '💬 ' : '';
   item.innerHTML = `
     <p class="text-xs font-semibold ${colorClase}">${icono}${mensaje}</p>
     <p class="text-sm text-gray-200 mt-0.5">${titulo}</p>
+    <button
+      type="button"
+      class="btn-descartar-alerta absolute top-2 right-2 text-gray-400 hover:text-white text-base leading-none px-1"
+      aria-label="Descartar notificación"
+    >&times;</button>
   `;
+
+  item.querySelector('.btn-descartar-alerta').addEventListener('click', (event) => {
+    event.stopPropagation();
+    item.remove();
+    _actualizarContador(-1);
+
+    if (meta.tipo === 'notif' && meta.id) {
+      _marcarNotificacionLeida(meta.id);
+    } else if (meta.tipo === 'alerta') {
+      const descartadas = _obtenerAlertasDescartadas();
+      descartadas.add(_claveAlerta(titulo, mensaje));
+      _guardarAlertasDescartadas(descartadas);
+    }
+
+    if (!document.getElementById('lista-alertas').children.length) {
+      _mostrarListaVacia();
+    }
+  });
+
   return item;
 }
 
-function _inyectarAlertaEnPanel(mensaje, titulo) {
+function _inyectarAlertaEnPanel(mensaje, titulo, id) {
   const lista = document.getElementById('lista-alertas');
-  if (lista.children.length === 1 && lista.children[0].textContent.trim() === 'No hay alertas') {
+  if (lista.children.length === 1 && lista.children[0].textContent.trim() === 'No tienes notificaciones pendientes') {
     lista.innerHTML = '';
   }
-  lista.insertBefore(_crearItemAlerta(mensaje, titulo || 'Nuevo mensaje en el chat', 'purple'), lista.firstChild);
+  lista.insertBefore(
+    _crearItemAlerta(mensaje, titulo || 'Nuevo mensaje en el chat', 'purple', { tipo: 'notif', id }),
+    lista.firstChild
+  );
 }
 
 function _mostrarToast(texto) {
@@ -712,6 +801,23 @@ document.getElementById('btn-alertas').addEventListener('click', () => {
   document.getElementById('menu-alertas').classList.toggle('hidden');
 });
 
+document.getElementById('btn-limpiar-alertas').addEventListener('click', async (event) => {
+  event.stopPropagation();
+
+  const items = [...document.querySelectorAll('#lista-alertas li[data-tipo]')];
+  const descartadas = _obtenerAlertasDescartadas();
+  items
+    .filter((item) => item.dataset.tipo === 'alerta')
+    .forEach((item) => descartadas.add(_claveAlerta(item.dataset.titulo, item.dataset.mensaje)));
+  _guardarAlertasDescartadas(descartadas);
+
+  _mostrarListaVacia();
+  document.getElementById('contador-alertas').classList.add('hidden');
+  document.getElementById('contador-alertas').textContent = '';
+
+  await _marcarTodasNotificacionesLeidas();
+});
+
 async function cargarAlertas() {
   try {
     const headers = { 'Authorization': 'Bearer ' + token };
@@ -720,8 +826,11 @@ async function cargarAlertas() {
       fetch(`${API_URL}/notificaciones`, { headers }),
     ]);
 
-    const alertas = resAlertas.ok ? await resAlertas.json() : [];
-    const notifs  = resNotifs.ok  ? await resNotifs.json()  : [];
+    const alertasCrudas = resAlertas.ok ? await resAlertas.json() : [];
+    const notifs        = resNotifs.ok  ? await resNotifs.json()  : [];
+
+    const descartadas = _obtenerAlertasDescartadas();
+    const alertas = alertasCrudas.filter((a) => !descartadas.has(_claveAlerta(a.titulo, a.mensaje)));
 
     const contador = document.getElementById('contador-alertas');
     const lista    = document.getElementById('lista-alertas');
@@ -732,14 +841,11 @@ async function cargarAlertas() {
     if (total > 0) {
       contador.classList.remove('hidden');
       contador.textContent = total;
-      notifs.forEach((n) => lista.appendChild(_crearItemAlerta(n.mensaje, n.titulo, 'purple')));
-      alertas.forEach((a) => lista.appendChild(_crearItemAlerta(a.mensaje, a.titulo, 'red')));
+      notifs.forEach((n) => lista.appendChild(_crearItemAlerta(n.mensaje, n.titulo, 'purple', { tipo: 'notif', id: n._id })));
+      alertas.forEach((a) => lista.appendChild(_crearItemAlerta(a.mensaje, a.titulo, 'red', { tipo: 'alerta' })));
     } else {
       contador.classList.add('hidden');
-      const item = document.createElement('li');
-      item.className = 'px-4 py-4 text-sm text-gray-400 text-center';
-      item.textContent = 'No hay alertas';
-      lista.appendChild(item);
+      _mostrarListaVacia();
     }
   } catch {
     // silencioso

@@ -530,9 +530,10 @@ async def enviar_mensaje(request: Request, documento_id: str, datos: MensajeChat
                 "fecha": ahora,
                 "leida": False,
             }
-            await request.app.state.db["notificaciones"].insert_one(notif)
+            resultado_insert = await request.app.state.db["notificaciones"].insert_one(notif)
             await manager.notificar(receptor, {
                 "tipo": "nueva_alerta",
+                "id": str(resultado_insert.inserted_id),
                 "titulo": notif["titulo"],
                 "mensaje": notif["mensaje"],
             })
@@ -610,6 +611,31 @@ async def obtener_notificaciones(request: Request, usuario_actual: dict = Depend
     for n in notifs:
         n["_id"] = str(n["_id"])
     return notifs
+
+
+@app.patch("/notificaciones/leer-todas")
+async def marcar_todas_notificaciones_leidas(request: Request, usuario_actual: dict = Depends(obtener_usuario_actual)):
+    await request.app.state.db["notificaciones"].update_many(
+        {"usuario_receptor": usuario_actual["correo"], "leida": False},
+        {"$set": {"leida": True}},
+    )
+    return {"mensaje": "Notificaciones marcadas como leidas"}
+
+
+@app.patch("/notificaciones/{notificacion_id}/leer")
+async def marcar_notificacion_leida(request: Request, notificacion_id: str, usuario_actual: dict = Depends(obtener_usuario_actual)):
+    try:
+        oid = ObjectId(notificacion_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="ID de notificacion invalido")
+
+    resultado = await request.app.state.db["notificaciones"].update_one(
+        {"_id": oid, "usuario_receptor": usuario_actual["correo"]},
+        {"$set": {"leida": True}},
+    )
+    if resultado.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Notificacion no encontrada")
+    return {"mensaje": "Notificacion marcada como leida"}
 
 
 # ==========================================

@@ -329,8 +329,15 @@
           id="menu-alertas"
           class="hidden absolute right-0 mt-2 w-80 bg-slate-800/90 backdrop-blur-md border border-white/20 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.5)] z-40 overflow-hidden"
         >
-          <div class="px-4 py-3 border-b border-white/10">
+          <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between">
             <p class="text-sm font-semibold text-gray-200">Notificaciones</p>
+            <button
+              id="btn-limpiar-alertas"
+              type="button"
+              class="text-xs text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+            >
+              Limpiar todo
+            </button>
           </div>
           <ul id="lista-alertas" class="max-h-72 overflow-y-auto divide-y divide-white/10"></ul>
         </div>
