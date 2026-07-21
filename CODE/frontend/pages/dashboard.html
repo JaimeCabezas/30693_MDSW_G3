@@ -195,6 +195,12 @@
       color: #3b0764 !important;
     }
 
+    /* Burbujas propias (bg-blue-600): el fondo azul se mantiene en ambos modos,
+       así que el texto debe seguir blanco pese al override general de "text-white" en modo claro */
+    body.light-mode #caja-mensajes > div[class*="bg-blue"] {
+      color: #ffffff !important;
+    }
+
     /* Fuerza herencia del color en los <p> de todas las burbujas (mensaje + remitente/hora) */
     body.light-mode #caja-mensajes > div p {
       color: inherit !important;
@@ -209,6 +215,11 @@
 
     body.light-mode #input-mensaje::placeholder {
       color: #94a3b8 !important;
+    }
+
+    /* Botón "Enviar" (bg-blue-600 text-white): mismo problema de contraste que las burbujas propias */
+    body.light-mode #form-chat button[type="submit"] {
+      color: #ffffff !important;
     }
 
     /* ── Responsivo ───────────────────────────────────────────────────────── */
