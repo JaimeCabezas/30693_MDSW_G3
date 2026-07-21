@@ -533,8 +533,29 @@ dropzone.addEventListener('drop', (e) => {
 
 inputFile.addEventListener('change', actualizarTextoDropzone);
 
+// Mantiene Origen/Destino siempre en idiomas opuestos (Inglés ⇄ Español).
+const selectIdiomaOrigen  = document.getElementById('input-idioma-origen');
+const selectIdiomaDestino = document.getElementById('input-idioma-destino');
+
+selectIdiomaOrigen.addEventListener('change', () => {
+  selectIdiomaDestino.value = selectIdiomaOrigen.value === 'Inglés' ? 'Español' : 'Inglés';
+});
+
+selectIdiomaDestino.addEventListener('change', () => {
+  selectIdiomaOrigen.value = selectIdiomaDestino.value === 'Inglés' ? 'Español' : 'Inglés';
+});
+
+// Formatea un Date a "YYYY-MM-DDTHH:mm" en hora local, formato que exige el atributo
+// min/value de un <input type="datetime-local">.
+const _fechaLocalInputValue = (fecha) => {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${fecha.getFullYear()}-${pad(fecha.getMonth() + 1)}-${pad(fecha.getDate())}T${pad(fecha.getHours())}:${pad(fecha.getMinutes())}`;
+};
+
 document.getElementById('btn-nuevo-documento').addEventListener('click', () => {
   cargarTraductoresEnSelect();
+  // Bloquea nativamente en el calendario cualquier fecha/hora anterior al momento actual.
+  document.getElementById('input-fecha-entrega').min = _fechaLocalInputValue(new Date());
   modal.classList.remove('hidden');
 });
 
@@ -554,11 +575,24 @@ formCrear.addEventListener('submit', async (e) => {
     return;
   }
 
+  const idiomaOrigen  = selectIdiomaOrigen.value;
+  const idiomaDestino = selectIdiomaDestino.value;
+  if (idiomaOrigen === idiomaDestino) {
+    alert('El idioma de origen y destino no pueden ser el mismo.');
+    return;
+  }
+
+  const fechaLimite = new Date(document.getElementById('input-fecha-entrega').value);
+  if (fechaLimite <= new Date()) {
+    alert('La fecha límite de entrega no puede ser anterior o igual a la fecha actual.');
+    return;
+  }
+
   const formData = new FormData();
   formData.append('titulo',          document.getElementById('input-titulo').value);
-  formData.append('idioma_origen',   document.getElementById('input-idioma-origen').value);
-  formData.append('idioma_destino',  document.getElementById('input-idioma-destino').value);
-  formData.append('fecha_entrega',   new Date(document.getElementById('input-fecha-entrega').value).toISOString());
+  formData.append('idioma_origen',   idiomaOrigen);
+  formData.append('idioma_destino',  idiomaDestino);
+  formData.append('fecha_entrega',   fechaLimite.toISOString());
   formData.append('asignado_a',      document.getElementById('select-traductor').value);
   formData.append('comentarios',     document.getElementById('input-comentarios').value);
   formData.append('archivo_origen',  inputFile.files[0]);

@@ -308,6 +308,9 @@ async def eliminar_usuario(request: Request, usuario_id: str, usuario_actual: di
 # 3. RUTAS Y ENDPOINTS - DOCUMENTOS
 # ==========================================
 
+IDIOMAS_SOPORTADOS = {"Inglés", "Español", "Ingles", "Espanol"}
+
+
 @app.post("/documentos")
 async def crear_documento(
     request: Request,
@@ -320,6 +323,21 @@ async def crear_documento(
     archivo_origen: UploadFile = File(...),
     usuario_actual: dict = Depends(obtener_usuario_actual),
 ):
+    if idioma_origen not in IDIOMAS_SOPORTADOS or idioma_destino not in IDIOMAS_SOPORTADOS:
+        raise HTTPException(status_code=400, detail="Idiomas no soportados.")
+
+    try:
+        fecha_entrega_dt = datetime.fromisoformat(fecha_entrega)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Formato de fecha inválido.")
+
+    ahora = datetime.now(timezone.utc)
+    fecha_entrega_comparable = (
+        fecha_entrega_dt if fecha_entrega_dt.tzinfo else fecha_entrega_dt.replace(tzinfo=timezone.utc)
+    )
+    if fecha_entrega_comparable <= ahora:
+        raise HTTPException(status_code=400, detail="La fecha límite de entrega no puede ser anterior a la fecha actual.")
+
     if archivo_origen.content_type not in [
         "application/pdf",
         "application/msword",
@@ -351,7 +369,7 @@ async def crear_documento(
         "titulo": titulo,
         "idioma_origen": idioma_origen,
         "idioma_destino": idioma_destino,
-        "fecha_entrega": datetime.fromisoformat(fecha_entrega),
+        "fecha_entrega": fecha_entrega_dt,
         "asignado_a": asignado_a,
         "comentarios": comentarios,
         "estado": "Pendiente",
