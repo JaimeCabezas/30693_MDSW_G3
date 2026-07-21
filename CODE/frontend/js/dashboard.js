@@ -129,7 +129,16 @@ const normalizeUrl = (ruta) => {
 
 const formatearFechaHora = (fechaIso) => {
   if (!fechaIso) return 'N/A';
-  const fecha = new Date(fechaIso);
+
+  // El backend guarda y calcula en UTC, pero Mongo/FastAPI devuelven el ISO string
+  // sin 'Z' ni offset ("naive"). Si no trae indicador de zona horaria, se lo agregamos
+  // para que new Date() lo interprete como UTC y luego lo convierta a la hora local (es-EC).
+  let isoString = String(fechaIso);
+  if (!isoString.endsWith('Z') && !isoString.includes('+') && !isoString.includes('-', 10)) {
+    isoString += 'Z';
+  }
+
+  const fecha = new Date(isoString);
   return fecha.toLocaleString('es-EC', {
     day: '2-digit',
     month: '2-digit',
