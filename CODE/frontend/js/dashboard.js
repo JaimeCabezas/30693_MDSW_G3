@@ -1060,9 +1060,9 @@ async function cargarMensajes(id) {
     mensajes.forEach((msg, index) => {
       const esIA   = msg.remitente === 'Sistema IA 🤖';
       const esMio  = !esIA && msg.remitente === miCorreo;
-      const fecha  = new Date(msg.fecha).toLocaleString('es-CL', {
-        day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
-      });
+      // Reutiliza el mismo helper que normaliza UTC y convierte a hora local
+      // usado en la tabla de documentos, para que ambas vistas queden consistentes.
+      const fecha  = formatearFechaHora(msg.fecha);
 
       const burbuja = document.createElement('div');
       burbuja.className = esMio
