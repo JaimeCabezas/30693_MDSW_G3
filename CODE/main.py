@@ -382,6 +382,27 @@ async def crear_documento(
     }
 
     await request.app.state.db["documentos"].insert_one(nuevo_documento)
+
+    # Notificar al traductor asignado el nuevo pedido de traducción
+    if asignado_a and asignado_a != usuario_actual["correo"]:
+        titulo_notif  = f"📄 Nuevo Pedido: {titulo}"
+        mensaje_notif = "Se te ha asignado un nuevo documento para traducción."
+
+        notif = {
+            "usuario_receptor": asignado_a,
+            "titulo": titulo_notif,
+            "mensaje": mensaje_notif,
+            "fecha": datetime.now(timezone.utc).isoformat(),
+            "leida": False,
+        }
+        resultado_insert = await request.app.state.db["notificaciones"].insert_one(notif)
+        await manager.notificar(asignado_a, {
+            "tipo": "nueva_alerta",
+            "id": str(resultado_insert.inserted_id),
+            "titulo": titulo_notif,
+            "mensaje": mensaje_notif,
+        })
+
     await registrar_log(usuario_actual["correo"], "Crear Documento", f"Título: {titulo}")
     return {"mensaje": "Documento creado exitosamente"}
 
