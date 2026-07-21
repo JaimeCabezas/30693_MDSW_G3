@@ -502,7 +502,34 @@ async def evaluar_documento(request: Request, documento_id: str, evaluacion: Eva
         {"_id": ObjectId(documento_id)},
         {"$set": campos}
     )
-    await registrar_log(usuario_actual["correo"], "Evaluar Documento", f"Título: {documento.get('titulo', 'Sin título')}, Aprobado: {evaluacion.aprobado}")
+
+    # Notificar al traductor asignado el resultado de la evaluación
+    titulo_doc = documento.get("titulo", "Sin título")
+    traductor = documento.get("asignado_a")
+    if traductor and traductor != usuario_actual["correo"]:
+        if evaluacion.aprobado:
+            titulo_notif   = "Traducción Aprobada"
+            mensaje_notif  = f"🎉 ¡Traducción Aprobada! Tu trabajo en el documento '{titulo_doc}' ha sido aceptado."
+        else:
+            titulo_notif   = "Corrección Requerida"
+            mensaje_notif  = f"⚠️ Corrección requerida en '{titulo_doc}': {evaluacion.feedback or ''}"
+
+        notif = {
+            "usuario_receptor": traductor,
+            "titulo": titulo_notif,
+            "mensaje": mensaje_notif,
+            "fecha": datetime.now(timezone.utc).isoformat(),
+            "leida": False,
+        }
+        resultado_insert = await request.app.state.db["notificaciones"].insert_one(notif)
+        await manager.notificar(traductor, {
+            "tipo": "nueva_alerta",
+            "id": str(resultado_insert.inserted_id),
+            "titulo": notif["titulo"],
+            "mensaje": notif["mensaje"],
+        })
+
+    await registrar_log(usuario_actual["correo"], "Evaluar Documento", f"Título: {titulo_doc}, Aprobado: {evaluacion.aprobado}")
     return {"mensaje": "Evaluación registrada exitosamente"}
 
 
@@ -544,7 +571,7 @@ async def enviar_mensaje(request: Request, documento_id: str, datos: MensajeChat
             notif = {
                 "usuario_receptor": receptor,
                 "titulo": "Nuevo mensaje en el chat",
-                "mensaje": f"Nuevo mensaje en {titulo_doc}",
+                "mensaje": f"💬 Nuevo mensaje en {titulo_doc}",
                 "fecha": ahora,
                 "leida": False,
             }

@@ -112,10 +112,11 @@ function _crearItemAlerta(mensaje, titulo, color, meta = {}) {
   item.dataset.titulo = titulo;
   item.dataset.mensaje = mensaje;
 
+  // El emoji identificador (💬 chat, 🎉 aprobado, ⚠️ corrección…) ya viene incluido
+  // en el propio texto del mensaje que arma el backend para cada tipo de notificación.
   const colorClase = color === 'purple' ? 'text-purple-400' : 'text-red-400';
-  const icono      = color === 'purple' ? '💬 ' : '';
   item.innerHTML = `
-    <p class="text-xs font-semibold ${colorClase}">${icono}${mensaje}</p>
+    <p class="text-xs font-semibold ${colorClase}">${mensaje}</p>
     <p class="text-sm text-gray-200 mt-0.5">${titulo}</p>
     <button
       type="button"
