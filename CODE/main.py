@@ -15,10 +15,10 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request,
 from urllib.parse import unquote
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.staticfiles import StaticFiles
 from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo.errors import ConnectionFailure
 from passlib.context import CryptContext
 import jwt
 
@@ -107,9 +107,36 @@ app.add_middleware(
 )
 
 os.makedirs('uploads', exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 intentos_login = {}
+
+
+# ==========================================
+# 0b. DESCARGA DE ARCHIVOS (/uploads)
+# ==========================================
+
+UPLOADS_DIR = os.path.abspath("uploads")
+
+
+@app.get("/uploads/{nombre_archivo:path}")
+async def descargar_archivo(nombre_archivo: str):
+    """Sirve archivos subidos, decodificando espacios/tildes (%20, etc.) del nombre."""
+    nombre_decodificado = unquote(nombre_archivo)
+
+    ruta_completa = os.path.abspath(os.path.join(UPLOADS_DIR, nombre_decodificado))
+    # Evita path traversal (ej. "../../"): la ruta final debe seguir dentro de uploads/
+    if not ruta_completa.startswith(UPLOADS_DIR + os.sep):
+        raise HTTPException(status_code=404, detail="Archivo no encontrado")
+
+    if not os.path.isfile(ruta_completa):
+        return JSONResponse(
+            status_code=404,
+            content={
+                "error": "El archivo físico expiró en el servidor temporal. Vuelva a subirlo para esta demostración."
+            },
+        )
+
+    return FileResponse(ruta_completa, filename=os.path.basename(ruta_completa))
 
 
 # ==========================================
@@ -659,3 +686,21 @@ async def actualizar_configuracion_costo(request: Request, datos: ConfiguracionC
         upsert=True,
     )
     return {"mensaje": "Costo actualizado exitosamente", "costo_por_pagina": datos.costo_por_pagina}
+
+
+# ==========================================
+# 9. RUTAS Y ENDPOINTS - HEALTH CHECK (REQ009)
+# ==========================================
+
+@app.get("/health/db")
+async def verificar_estado_base_datos(simular_caida: bool = False):
+    
+    if simular_caida:
+        raise HTTPException(status_code=503, detail="Base de datos inalcanzable (Simulada)")
+
+    try:
+        await app.state.mongo_client.admin.command('ping')
+        return {"estado": "ok", "mensaje": "Conexión a MongoDB exitosa"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fallo crítico de conexión: {str(e)}")

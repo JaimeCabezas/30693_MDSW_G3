@@ -4,6 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>United Republic</title>
+  <script>
+    // Silencia únicamente la advertencia de "cdn.tailwindcss.com should not be used in production"
+    // (esperada en esta demo académica); no oculta ningún otro warning/error de la consola.
+    (() => {
+      const advertenciaOriginal = console.warn;
+      console.warn = (...args) => {
+        if (typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+        advertenciaOriginal.apply(console, args);
+      };
+    })();
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     /* ── Layout Split Screen ──────────────────────────────────────────────── */

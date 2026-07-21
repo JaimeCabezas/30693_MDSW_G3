@@ -13,10 +13,14 @@ const _wsCorreo = (() => {
 })();
 
 let _ws = null;
+let _wsReconnectTimer = null;
 
 function _conectarWebSocket() {
   if (!_wsCorreo) return;
-  _ws = new WebSocket(`${WS_URL}/ws?correo=${encodeURIComponent(_wsCorreo)}`);
+  clearTimeout(_wsReconnectTimer);
+
+  // WS_URL ya incluye el path "/ws"; no volver a concatenarlo (evita conectar a "/ws/ws").
+  _ws = new WebSocket(`${WS_URL}?correo=${encodeURIComponent(_wsCorreo)}`);
 
   _ws.onmessage = (event) => {
     try {
@@ -36,7 +40,11 @@ function _conectarWebSocket() {
     } catch { /* silencioso */ }
   };
 
-  _ws.onclose = () => setTimeout(_conectarWebSocket, 3000);
+  // Reconexión automática y silenciosa: no relanzar errores a la consola.
+  _ws.onerror = () => { _ws.close(); };
+  _ws.onclose = () => {
+    _wsReconnectTimer = setTimeout(_conectarWebSocket, 3000);
+  };
 }
 
 function _crearItemAlerta(mensaje, titulo, color) {
@@ -112,8 +120,12 @@ const obtenerRol = () => {
   }
 };
 
-const normalizeUrl = (ruta) =>
-  `${API_URL}/` + ruta.split('\\\\').join('/').split('\\').join('/');
+const normalizeUrl = (ruta) => {
+  const rutaNormalizada = ruta.split('\\\\').join('/').split('\\').join('/');
+  // Codifica cada segmento (espacios, tildes, ñ, etc.) para que coincida con el unquote() del backend.
+  const segmentos = rutaNormalizada.split('/').map(encodeURIComponent);
+  return `${API_URL}/${segmentos.join('/')}`;
+};
 
 // ── Visibilidad según rol ──────────────────────────────────────────────────────
 
@@ -624,7 +636,7 @@ window.iniciarTraduccion = async (id, urlRaw) => {
   } catch {
     // continúa aunque falle el cambio de estado
   }
-  window.open(`${API_URL}/` + urlRaw, '_blank');
+  window.open(normalizeUrl(urlRaw), '_blank');
   await cargarDocumentos();
 };
 
