@@ -445,7 +445,7 @@ async def subir_traduccion(
         {"_id": ObjectId(documento_id)},
         {"$set": {"archivo_traduccion_url": ruta_guardado, "estado": "En revisión"}}
     )
-    await registrar_log(usuario_actual["correo"], "Subir Traducción", f"Doc ID: {documento_id}")
+    await registrar_log(usuario_actual["correo"], "Subir Traducción", f"Título: {db_doc.get('titulo', 'Sin título')}")
     return {"mensaje": "Traducción subida exitosamente", "ruta": ruta_guardado}
 
 
@@ -461,7 +461,7 @@ async def iniciar_documento(request: Request, documento_id: str, usuario_actual:
         {"_id": ObjectId(documento_id)},
         {"$set": {"estado": "En proceso"}}
     )
-    await registrar_log(usuario_actual["correo"], "Iniciar Traducción", f"Doc ID: {documento_id}")
+    await registrar_log(usuario_actual["correo"], "Iniciar Traducción", f"Título: {documento.get('titulo', 'Sin título')}")
     return {"mensaje": "Documento marcado como 'En proceso'"}
 
 
@@ -484,7 +484,7 @@ async def evaluar_documento(request: Request, documento_id: str, evaluacion: Eva
         {"_id": ObjectId(documento_id)},
         {"$set": campos}
     )
-    await registrar_log(usuario_actual["correo"], "Evaluar Documento", f"Doc ID: {documento_id}, Aprobado: {evaluacion.aprobado}")
+    await registrar_log(usuario_actual["correo"], "Evaluar Documento", f"Título: {documento.get('titulo', 'Sin título')}, Aprobado: {evaluacion.aprobado}")
     return {"mensaje": "Evaluación registrada exitosamente"}
 
 
