@@ -127,6 +127,19 @@ const normalizeUrl = (ruta) => {
   return `${API_URL}/${segmentos.join('/')}`;
 };
 
+const formatearFechaHora = (fechaIso) => {
+  if (!fechaIso) return 'N/A';
+  const fecha = new Date(fechaIso);
+  return fecha.toLocaleString('es-EC', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+};
+
 // ── Visibilidad según rol ──────────────────────────────────────────────────────
 
 const rol = obtenerRol();
@@ -327,7 +340,7 @@ async function cargarDocumentos() {
 
     documentos.forEach((doc) => {
       const fechaLimite = doc.fecha_entrega
-        ? new Date(doc.fecha_entrega).toLocaleDateString('es-CL')
+        ? formatearFechaHora(doc.fecha_entrega)
         : '-';
 
       const estadoClases = {
@@ -828,8 +841,8 @@ window.verDetalle = (id) => {
 
   // Campos comunes
   document.getElementById('det-idiomas').textContent  = `${doc.idioma_origen} → ${doc.idioma_destino}`;
-  const fechaEnvio  = doc.fecha_envio    ? new Date(doc.fecha_envio).toLocaleDateString('es-CL')    : '-';
-  const fechaLimite = doc.fecha_entrega  ? new Date(doc.fecha_entrega).toLocaleDateString('es-CL')  : '-';
+  const fechaEnvio  = formatearFechaHora(doc.fecha_envio);
+  const fechaLimite = formatearFechaHora(doc.fecha_entrega);
   document.getElementById('det-fechas').textContent      = `Enviado: ${fechaEnvio} · Límite: ${fechaLimite}`;
   document.getElementById('det-comentarios').textContent = doc.comentarios || '-';
 
